@@ -1,0 +1,96 @@
+<?php
+
+class ProcessShortcodes extends Process {
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'Short Codes', 
+			'version' => 101, 
+			'summary' => 'Enables WordPress like shortcodes.', 
+		); 
+	}
+
+	private $shortcode_tags = array();
+
+	public function add($tag, $func) {
+		$this->shortcode_tags[$tag] = $func;
+	}
+	
+	public function remove($tag) {
+		unset($this->shortcode_tags[$tag]);
+	}
+	
+	public function remove_all() {
+		$this->shortcode_tags = array();
+	}
+
+	private function get_shortcodes($text) {
+		if($this->shortcode_tags) {
+			$keys = array('full', 'extra_before', 'name', 'attributes', 'closing', 'content', 'extra_after');
+			$tags = implode('|', array_keys($this->shortcode_tags));
+			
+			$pattern = '\\[(\\[?)('.$tags.')\\b([^\\]\\/]*(?:\\/(?!\\])[^\\]\\/]*)*?)(?:(\\/)\\]|\\](?:([^\\[]*+(?:\\[(?!\\/\\2\\])[^\\[]*+)*+)\\[\\/\\2\\])?)(\\]?)';
+			preg_match_all('/'.$pattern.'/', $text, $matches, PREG_SET_ORDER);
+			
+			foreach($matches as $match) {
+				$return[$match[2]] = array_combine($keys, $match);		
+				$name = $match[2];
+						
+				$atts = array();
+				$pattern = '/(\w+)\s*=\s*"([^"]*)"(?:\s|$)|(\w+)\s*=\s*\'([^\']*)\'(?:\s|$)|(\w+)\s*=\s*([^\s\'"]+)(?:\s|$)|"([^"]*)"(?:\s|$)|(\S+)(?:\s|$)/';
+				$text = preg_replace("/[\x{00a0}\x{200b}]+/u", " ", $return[$name]['attributes']);
+				if(preg_match_all($pattern, $text, $match, PREG_SET_ORDER)) {
+					foreach ($match as $m) {
+						if (!empty($m[1])) {
+							$atts[strtolower($m[1])] = stripcslashes($m[2]);
+						} elseif (!empty($m[3])) {
+							$atts[strtolower($m[3])] = stripcslashes($m[4]);
+						} elseif (!empty($m[5])) {
+							$atts[strtolower($m[5])] = stripcslashes($m[6]);
+						} elseif (isset($m[7]) and strlen($m[7])) {
+							$atts[] = stripcslashes($m[7]);
+						} elseif (isset($m[8])) {
+							$atts[] = stripcslashes($m[8]);
+						}
+					}
+				} else {
+					$atts = ltrim($text);
+				}
+				
+				if($return[$name]['content']) {
+					$atts = array_merge(array('content' => $return[$name]['content']), $atts);
+				}
+				
+				$return[$name]['attributes'] = $atts;
+			}
+			
+			return $return;
+		} else {
+			return array();
+		}
+	}
+	
+	
+	public function render($content) {
+		$shortcode_tags = $this->shortcode_tags;
+		$shortcodes = $this->get_shortcodes($content);
+
+		foreach($shortcodes as $shortcode) {
+			$safe_pattern = str_replace(array('[', ']', '/', '"', '\''), array('\\[', ']', '\\/', '\\"', '\\\''), $shortcode['full']);
+			
+			$content = preg_replace_callback('%'.$safe_pattern.'%s', (function ($matches) use ($shortcode_tags, $shortcode) {
+				if($shortcode_tags[$shortcode['name']]) {
+					return $shortcode_tags[$shortcode['name']]($shortcode['attributes']);
+				}
+			}), $content);
+		}
+	
+		return $content;
+	}
+	
+	public function format($content) {
+		$this->render($content);
+	}
+
+}
+
+?>
