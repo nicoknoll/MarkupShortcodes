@@ -1,13 +1,17 @@
 <?php
 
-class ProcessShortcodes extends Process {
+class MarkupShortcodes extends WireData implements Module {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Short Codes', 
-			'version' => 101, 
+			'version' => 102, 
 			'summary' => 'Enables WordPress like shortcodes.', 
-		); 
+		  	'autoload' => false,
+          	'singular' => true 
+    	); 
 	}
+          
+	public function init() {}
 
 	private $shortcode_tags = array();
 
