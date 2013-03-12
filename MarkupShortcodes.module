@@ -4,7 +4,7 @@ class MarkupShortcodes extends WireData implements Module {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Short Codes', 
-			'version' => 102, 
+			'version' => 1.03, 
 			'summary' => 'Enables WordPress like shortcodes.', 
 		  	'autoload' => false,
           	'singular' => true 
@@ -57,11 +57,15 @@ class MarkupShortcodes extends WireData implements Module {
 						}
 					}
 				} else {
-					$atts = ltrim($text);
+					if(ltrim($text) == '') {
+						$attr = array();
+					} else {
+						$atts = ltrim($text);
+					}
 				}
 				
 				if($return[$name]['content']) {
-					$atts = array_merge(array('content' => $return[$name]['content']), $atts);
+					$atts = array_merge(array('content' => $return[$name]['content']), (array)$atts);
 				}
 				
 				$return[$name]['attributes'] = $atts;
