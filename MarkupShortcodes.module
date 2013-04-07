@@ -4,7 +4,7 @@ class MarkupShortcodes extends WireData implements Module {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Short Codes', 
-			'version' => 1.03, 
+			'version' => 1.04, 
 			'summary' => 'Enables WordPress like shortcodes.', 
 		  	'autoload' => false,
           	'singular' => true 
@@ -97,6 +97,18 @@ class MarkupShortcodes extends WireData implements Module {
 	
 	public function format($content) {
 		$this->render($content);
+	}
+	
+	public function ___install() {
+	
+		if(ProcessWire::versionMajor == 2 && ProcessWire::versionMinor < 2) {
+			throw new WireException("This module requires ProcessWire 2.2 or newer."); 
+		}
+	
+		if(version_compare(PHP_VERSION, '5.3.0', '<')) {
+			throw new WireException("This module requires PHP 5.3 or newer."); 
+		}
+	
 	}
 
 }
