@@ -4,7 +4,7 @@ class MarkupShortcodes extends WireData implements Module {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Short Codes',
-			'version' => 1.06,
+			'version' => 1.04,
 			'summary' => 'Enables WordPress like shortcodes.',
 		  	'autoload' => false,
           	'singular' => true
@@ -37,7 +37,6 @@ class MarkupShortcodes extends WireData implements Module {
 			preg_match_all('/'.$pattern.'/', $text, $matches, PREG_SET_ORDER);
 
 			$return = array();
-
 			foreach($matches as $match) {
 				$item = array( "name" => $match[2] );
 				$item[$match[2]] = array_combine($keys, $match);
@@ -91,8 +90,7 @@ class MarkupShortcodes extends WireData implements Module {
 
 		foreach($shortcodes as $shortcode) {
 			$element = $shortcode[$shortcode['name']];
-			$safe_pattern = str_replace(array('[', ']', '/', '"', '\''), array('\\[', ']', '\\/', '\\"', '\\\''), $element['full']);
-
+			$safe_pattern = preg_quote($element['full']);
 			$content = preg_replace_callback('%'.$safe_pattern.'%s', (function ($matches) use ($shortcode_tags, $element) {
 				if($shortcode_tags[$element['name']]) {
 					return $shortcode_tags[$element['name']]($element['attributes']);
